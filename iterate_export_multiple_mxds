@@ -1,0 +1,25 @@
+# Put all the mxd's you would like to export in one file folder. 
+# Set the file folder as your workspace in the third line. 
+# This script exports each to both pdf and jpg. 
+
+import arcpy
+import os
+arcpy.env.workspace = r"C:\CountyMaps\MXD"
+mxd = arcpy.mapping.MapDocument("CURRENT")
+mapDoc = r"C:\CountyMaps\MXD\AlamanceCounty_FCC.mxd"
+
+for file in arcpy.ListFiles("*.mxd"):
+	mxd = arcpy.mapping.MapDocument(file)
+	mapDoc = file
+	fullnam = os.path.basename(mapDoc)
+	nam = fullnam.strip(".mxd")
+	out_pdf = arcpy.env.workspace + os.sep + nam + ".pdf"
+	out_jpg = arcpy.env.workspace + os.sep + nam + ".jpg"
+	arcpy.mapping.ExportToPDF(mxd,out_pdf,
+	resolution=300,
+	convert_markers="TRUE",
+	image_quality="BETTER",
+	embed_fonts="FALSE",
+	georef_info="FALSE")
+	arcpy.mapping.ExportToJPEG(mxd,out_jpg,
+	resolution=150)
