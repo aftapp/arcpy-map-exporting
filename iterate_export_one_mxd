@@ -1,0 +1,66 @@
+# The set of code exports one mxd repeatedly for each neighborhood
+# in the dataset. In each iteration, 1) the map zooms to next neighborhood, 
+# 2) applies a definition query to only show that neighborhood,
+# 3) changes text elements in the layout, and 4) exports to pdf. 
+
+import arcpy
+import os
+from arcpy import env
+mxd = arcpy.mapping.MapDocument("CURRENT")
+env.workspace = "C:\AFT_WS\BUSINESS\WORK\Seb\Working"
+df = arcpy.mapping.ListDataFrames(mxd, "Layers") [0]
+
+# Creates layers from shapefiles already added to the map document, 
+# but turned off in the TOC then imports the symbology from the 
+# shapefiles, while the new layers remain turned on. The layers are
+# used in the next set of code that manipulates the map view. 
+
+arcpy.MakeFeatureLayer_management(r"C:\AFT_WS\BUSINESS\WORK\Seb\Working\Neighborhoods-Cuernavaca-Torreon.shp", "nH")
+arcpy.ApplySymbologyFromLayer_management("nH","NeigborhoodMaster")
+arcpy.MakeFeatureLayer_management(r"C:\AFT_WS\BUSINESS\WORK\Seb\Working\Blocks_joined_to_Zones_part2.shp", "bK")
+arcpy.ApplySymbologyFromLayer_management("bK","Blocks_joined_to_Zones_with_Cntx")
+
+fc = "C:\\AFT_WS\\BUSINESS\\WORK\\Seb\\Working\\Neighborhoods-Cuernavaca-Torreon.shp"
+cursor = arcpy.SearchCursor(fc)
+row = cursor.next()
+while row:
+	mxd = arcpy.mapping.MapDocument("CURRENT")
+	lyr2 = arcpy.mapping.Layer("bK")
+	currentNH = row.getValue("CVEGEO")
+	currentCity = row.getValue("Zona")
+	currentLat = row.getValue("Latitude")
+	currentLong = row.getValue("Longitude")
+	wClause = '"CVEGEO" = ' + "'%s'" %currentNH 					
+	
+	df = arcpy.mapping.ListDataFrames(mxd, "Layers")[0]
+	lyr = arcpy.mapping.ListLayers(mxd, "nH", df)[0]
+	arcpy.SelectLayerByAttribute_management ("nH", "NEW_SELECTION", wClause)
+
+	df.extent = lyr.getSelectedExtent(False)
+	df.scale = df.scale * 1.1
+
+	lyr.definitionQuery = wClause
+	lyr2.definitionQuery = wClause
+	arcpy.SelectLayerByAttribute_management ("nH", "CLEAR_SELECTION")
+
+	# changing layout items
+	elmCity = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", "City")[0]
+	elmCity.text = currentCity
+	elmCode = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", "Code")[0]
+	elmCode.text = currentNH
+	elmLat = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", "Lat")[0]
+	elmLat.text = currentLat
+	elmLong = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT", "Long")[0]
+	elmLong.text = currentLong
+
+	# export map to pdf
+	arcpy.RefreshActiveView()
+	env.workspace = "C:\\AFT_WS\\BUSINESS\\WORK\\Seb\\pdf"
+	out_pdf = arcpy.env.workspace + os.sep + currentNH + ".pdf"
+	arcpy.mapping.ExportToPDF(mxd, out_pdf, resolution = 150)
+
+	#remove definition query
+	lyr.definitionQuery = ""
+	lyr2.definitionQuery = ""
+
+	row = cursor.next()
