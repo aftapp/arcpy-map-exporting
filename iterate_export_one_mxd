@@ -20,6 +20,10 @@ arcpy.ApplySymbologyFromLayer_management("nH","NeigborhoodMaster")
 arcpy.MakeFeatureLayer_management(r"C:\AFT_WS\BUSINESS\WORK\Seb\Working\Blocks_joined_to_Zones_part2.shp", "bK")
 arcpy.ApplySymbologyFromLayer_management("bK","Blocks_joined_to_Zones_with_Cntx")
 
+# The text elements that need to change each time in the map are 
+# given the names CVEGEO, Zona, Latitude, and Longitude in their
+# respective properties boxes. 
+
 fc = "C:\\AFT_WS\\BUSINESS\\WORK\\Seb\\Working\\Neighborhoods-Cuernavaca-Torreon.shp"
 cursor = arcpy.SearchCursor(fc)
 row = cursor.next()
